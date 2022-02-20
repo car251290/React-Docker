@@ -64,4 +64,141 @@ We can’t ship this docker image to the production as it is not optimized and r
 $ mv Dockerfile Dockerfile.dev
 docker-compose.yml
 
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src:/app/src
+    ports:
+      - "8000:8000"
+Add Production Dockerfile
+Let’s first verify the React application production config by running the yarn build command to build the app for production.
+$ yarn build
+We can verify the production build by running it locally. I am using serve to serve the build folder files.
+$ npx serve -s build
+After verifying the server locally we can create a new Dockerfile for the production build. We will be using multi-stage builds to create the docker image. The first stage is to build the production files and the second stage is to serve them.
+Dockerfile
+FROM node:14-alpine AS builder
+WORKDIR /app
+COPY package.json ./
+COPY yarn.lock ./
+RUN yarn install --frozen-lockfile
+COPY . .
+RUN yarn build
+
+FROM nginx:1.19-alpine AS server
+COPY --from=builder ./app/build /usr/share/nginx/html
+The builder stage is nearly the same as the previous Dockerfile. Instead of running the npm start command here, we are running the yarn build command to build the production files.
+We will use Nginx to serve the files. It will create a very lightweight image. From the builder stage, we need to copy the files of the build folder to the /usr/share/nginx/html folder. Nginx Docker image uses this folder to serve the contents. Nginx Docker image will use the port 80 to serve the files and auto expose that port.
+Let’s build the image again by running the docker build command and verify if the image is built or not by running the docker images command.
+$ docker build -t react-docker .
+$ docker images
+The size of the production docker image will be very less in comparison to the development one. Let’s run the docker image with the docker run command. Here we are mapping the host 3000 port with the container's port 80
+docker run -p 3000:80 react-docker
+The application should be running fine on http://localhost:3000. Now let’s verify if the client-side routing is working fine or not. For that, we need to install the react-router-dom to the application.
+$ yarn add react-router-dom
+We also need to add a few routes and links to verify. I just copied the example from the react-router website to test.
+import React from "react";
+import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+
+export default function App() {
+  return (
+    <Router>
+      <div>
+        <nav>
+          <ul>
+            <li>
+              <Link to="/">Home</Link>
+            </li>
+            <li>
+              <Link to="/about">About</Link>
+            </li>
+            <li>
+              <Link to="/users">Users</Link>
+            </li>
+          </ul>
+        </nav>
+        <Switch>
+          <Route path="/about">
+            <About />
+          </Route>
+          <Route path="/users">
+            <Users />
+          </Route>
+          <Route path="/">
+            <Home />
+          </Route>
+        </Switch>
+      </div>
+    </Router>
+  );
+}
+
+function Home() {
+  return <h2>Home</h2>;
+}
+
+function About() {
+  return <h2>About</h2>;
+}
+
+function Users() {
+  return <h2>Users</h2>;
+}
+Let’s verify the local setup by running the development server and visiting the web page and clicking on every link and refreshing the pages.
+$ npm start
+The application should be working fine on the local development server. Now try the same thing with docker-compose. First, we need to build the image again as auto-reload works only with the src folder as we only mount that. For changes outside the src folder, we need to build the image again with the docker-compose build command.
+$ docker-compose build
+$ docker-compose up
+Now Let’s try the same thing with the production docker build. First, we need to build the docker image and run the image again.
+docker build -t react-docker .
+docker run -p 3000:80 react-docker
+Accessing the pages other than the index directly should throw a 404 error. The React application here is a single-page application. Thus the routing is happing on the client-side with JavaScript and when we hit any route it first hits the Nginx server and tries to find the file there and when it was unable to find the fine it throws the 404 error.
+We need to pass a custom Nginx configuration to the docker image. We will create an etc folder in the project's root directory and create an nginx.conf file there.
+etc/nginx.conf
+server {
+    listen   80;
+    listen   [::]:80 default ipv6only=on;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    server_tokens  off;
+    server_name _;
+
+    gzip on;
+    gzip_disable "msie6";
+
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_comp_level 6;
+    gzip_buffers 16 8k;
+    gzip_http_version 1.1;
+    gzip_min_length 0;
+    gzip_types text/plain application/javascript text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/vnd.ms-fontobject application/x-font-ttf font/opentype;
+
+    location / {
+        try_files $uri /index.html;
+    }
+}
+Here we are configuring Nginx to fall back to /index.html if it is unable to find the route. We also enable gzip compression for the contents.
+We need to copy the custom Nginx configuration file to the /etc/nginx/conf.d folder. Ngnix will auto-read all the configurations from that folder.
+FROM node:14-alpine AS builder
+WORKDIR /app
+COPY package.json ./
+COPY yarn.lock ./
+RUN yarn install --frozen-lockfile
+COPY . .
+RUN yarn build
+
+FROM nginx:1.19-alpine AS server
+COPY ./etc/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder ./app/build /usr/share/nginx/html
+After copying the custom Nginx configuration file we need to build and run the docker image again.
+$ docker build -t react-docker .
+$ docker run -p 3000:80 react-docker
 
