@@ -37,3 +37,31 @@ npm-debug.log
 Dockerfile
 .dockerignore
 
+Let’s build the Docker image from the Dockerfile by running the docker build command. Here we are tagging it with the name react-docker.
+$ docker build -t react-docker .
+After building the docker images we can verify the image by running the docker images command. We can see an image with the name react-docker is created.
+$ docker images
+We can run the Docker image with the docker run command. Here we are mapping the system port 3000 to Docker container port 3000. We can verify if the application is running or not by visiting http://localhost:3000.
+$ docker run -p 3000:3000 react-docker
+Add Docker Compose
+The React application is working fine inside the docker container, but we need to build and run the docker container every time we make any changes in the source files as auto-reloading is not working with this setup. We need to mount the local src folder to the docker container src folder, so every time we make any change inside the src folder, it will auto-reload the page on any code changes.
+We will add the docker-compose.yml file to the root of the project to mount the local src folder to the /app/src folder of the container.
+docker-compose.yml
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./src:/app/src
+    ports:
+      - "3000:3000"
+Run the docker-compose up command to start the container. The React development server will be running inside the container and will be watching the src folder.
+$ docker-compose up
+We can’t ship this docker image to the production as it is not optimized and runs a development server inside. Let’s rename the Dockerfile as Dockerfile.dev and update the docker-compose.yaml file to use the Dockerfile.dev file. We will use docker-compose and the Dockerfile.dev file only for development. We will create a new Dockerfile for the production build.
+$ mv Dockerfile Dockerfile.dev
+docker-compose.yml
+
+
