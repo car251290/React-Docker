@@ -28,3 +28,12 @@ COPY . .
 EXPOSE 3000
 
 CMD ["npm", "start"]
+
+
+Here We are using node v14 alpine as the base image to build and run the application. We are running the npm start command default command which will run the React development server. We also need the .dockerignore file which will prevent node_modules other unwanted files to get copied in the Docker image.
+.dockerignore
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+
