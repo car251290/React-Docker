@@ -9,7 +9,6 @@ Here I created a new React app named react-docker. Let's verify the app by runni
 $ npm start
 It will start the app and we can verify by visiting http://localhost:3000 in the browser. The application should be running.
 
-
 Write Dockerfile.
 Now let’s create a Docker image for the React application. We need a Dockerfile to create Docker images. Let’s create a file named Dockerfile in the root directory of the React application.
 Dockerfile
