@@ -46,7 +46,6 @@ $ docker images
 
 We can run the Docker image with the docker run command. Here we are mapping the system port 3000 to Docker container port 3000. We can verify if the application is running or not by visiting http://localhost:3000.
 $ docker run -p 3000:3000 react-docker
-Add Docker Compose
 
 The React application is working fine inside the docker container, but we need to build and run the docker container every time we make any changes in the source files as auto-reloading is not working with this setup. We need to mount the local src folder to the docker container src folder, so every time we make any change inside the src folder, it will auto-reload the page on any code changes.
 
