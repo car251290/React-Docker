@@ -101,12 +101,16 @@ We will use Nginx to serve the files. It will create a very lightweight image. F
 Let’s build the image again by running the docker build command and verify if the image is built or not by running the docker images command.
 $ docker build -t react-docker .
 $ docker images
+
 The size of the production docker image will be very less in comparison to the development one. Let’s run the docker image with the docker run command. Here we are mapping the host 3000 port with the container's port 80
 docker run -p 3000:80 react-docker
+
 The application should be running fine on http://localhost:3000. Now let’s verify if the client-side routing is working fine or not. For that, we need to install the react-router-dom to the application.
 $ yarn add react-router-dom
+
 We also need to add a few routes and links to verify. I just copied the example from the react-router website to test.
 import React from "react";
+
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 
 export default function App() {
@@ -161,7 +165,10 @@ $ docker-compose up
 Now Let’s try the same thing with the production docker build. First, we need to build the docker image and run the image again.
 docker build -t react-docker .
 docker run -p 3000:80 react-docker
+
 Accessing the pages other than the index directly should throw a 404 error. The React application here is a single-page application. Thus the routing is happing on the client-side with JavaScript and when we hit any route it first hits the Nginx server and tries to find the file there and when it was unable to find the fine it throws the 404 error.
+
+
 We need to pass a custom Nginx configuration to the docker image. We will create an etc folder in the project's root directory and create an nginx.conf file there.
 etc/nginx.conf
 server {
