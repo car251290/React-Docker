@@ -84,7 +84,7 @@ Let’s first verify the React application production config by running the yarn
 $ yarn build
 We can verify the production build by running it locally. I am using serve to serve the build folder files.
 $ npx serve -s build
-After verifying the server locally we can create a new Dockerfile for the production build. We will be using multi-stage builds to create the docker image. The first stage is to build the production files and the second stage is to serve them.
+
 Dockerfile
 FROM node:14-alpine AS builder
 WORKDIR /app
